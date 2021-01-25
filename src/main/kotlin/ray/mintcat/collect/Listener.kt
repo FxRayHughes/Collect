@@ -28,7 +28,7 @@ class Listener : Listener, Helper {
             if (this.check(player)){
                 this.drop(player)
             }
-        }
+        } ?: return
 
     }
 
@@ -49,7 +49,26 @@ class Listener : Listener, Helper {
             }
             collectData.type = event.clickedBlock?.type?.name ?: "AIR"
             collectData.data = event.clickedBlock?.blockData?.asString ?: ""
+            collectData.location = Util.fromLocation(event.clickedBlock?.location!!)
             collectData.init()
+            return
+        }
+        if (player.isOp && event.action == Action.LEFT_CLICK_BLOCK && Items.hasName(item, "复制工具") && Items.hasLore(item, "Coolect")) {
+            event.isCancelled = true
+            val locationTools = Util.toLocation(item.itemMeta!!.lore!![1].unColored())
+            val collectDataTools = Collect.getCollect(locationTools.block)
+            val collectDataBlock = Collect.getCollect(event.clickedBlock!!)
+            if (collectDataTools == null) {
+                player.error("该方案已失效.")
+                return
+            }
+            if (collectDataBlock == null) {
+                player.error("该方块不存在方案.")
+                return
+            }
+            collectDataTools.drops = collectDataBlock.drops
+            collectDataTools.conditions = collectDataBlock.conditions
+            collectDataTools.init()
         }
     }
 

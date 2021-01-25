@@ -4,6 +4,8 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.World
 import org.bukkit.util.NumberConversions
+import java.math.RoundingMode
+import java.text.DecimalFormat
 
 object Util {
 
@@ -18,6 +20,13 @@ object Util {
     }
     private fun String.asDouble(): Double {
         return NumberConversions.toDouble(this)
+    }
+
+    fun Double.formatsOne(): String {
+        val format = DecimalFormat("0")
+        //未保留小数的舍弃规则，RoundingMode.FLOOR表示直接舍弃。
+        format.roundingMode = RoundingMode.FLOOR
+        return format.format(this)
     }
 
 }

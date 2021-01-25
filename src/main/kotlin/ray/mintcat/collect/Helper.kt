@@ -4,10 +4,7 @@ import io.izzel.taboolib.Version
 import io.izzel.taboolib.module.inject.TInject
 import io.izzel.taboolib.module.locale.TLocale
 import io.izzel.taboolib.util.lite.cooldown.Cooldown
-import org.bukkit.Effect
-import org.bukkit.FluidCollisionMode
-import org.bukkit.Material
-import org.bukkit.Sound
+import org.bukkit.*
 import org.bukkit.block.Block
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -52,6 +49,10 @@ interface Helper {
 
     fun Block.display() {
         world.playEffect(location, Effect.STEP_SOUND, type)
+    }
+
+    fun Location.disPlay() {
+        world?.playEffect(this, Effect.STEP_SOUND, Material.COMMAND_BLOCK)
     }
 
     fun String.unColored(): String {

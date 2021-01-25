@@ -23,9 +23,9 @@ import org.bukkit.inventory.ItemStack
 class CollectData(
     var type: String,
     var data: String,
-    val location: String,
-    val drops: MutableList<String> = ArrayList(),
-    val conditions: MutableList<String> = ArrayList()
+    var location: String,
+    var drops: MutableList<String> = ArrayList(),
+    var conditions: MutableList<String> = ArrayList()
 ) : Helper {
 
     lateinit var material: Material
@@ -56,7 +56,8 @@ class CollectData(
     }
 
     fun check(player: Player): Boolean {
-        return !conditions.map { Features.compileScript(it)?.eval().toString().toBoolean() }.contains(false)
+        val info = conditions.papi(player) ?: return true
+        return !info.map { Features.compileScript(it)?.eval().toString().toBoolean() }.contains(false)
     }
 
     fun drop(player: Player) {
