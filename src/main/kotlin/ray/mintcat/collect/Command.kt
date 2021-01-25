@@ -103,7 +103,7 @@ class Command : BaseMainCommand(), Helper {
             CronusUtils.addItem(
                 sender,
                 ItemBuilder(Material.BLAZE_ROD).name("§f§f§f复制工具")
-                    .lore("§7ScriptBlock", "§7${collectData.location}").shiny().build()
+                    .lore("§7Collect", "§7${collectData.location}").shiny().build()
             )
         }
     }
