@@ -1,4 +1,4 @@
-package ray.mintcat.collect
+package ray.mintcat.collect.data
 
 import io.izzel.taboolib.module.inject.TListener
 import io.izzel.taboolib.util.item.Items
@@ -8,10 +8,11 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
-import org.bukkit.event.player.PlayerEditBookEvent
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.EquipmentSlot
+import ray.mintcat.collect.Collect
+import ray.mintcat.collect.util.Helper
+import ray.mintcat.collect.util.Util
 
 @TListener
 class Listener : Listener, Helper {
@@ -49,8 +50,9 @@ class Listener : Listener, Helper {
             }
             collectData.type = event.clickedBlock?.type?.name ?: "AIR"
             collectData.data = event.clickedBlock?.blockData?.asString ?: ""
-            collectData.location = Util.fromLocation(event.clickedBlock?.location!!)
+            collectData.location = event.clickedBlock?.location!!
             collectData.init()
+            player.info("选择完成.")
             return
         }
         if (player.isOp && event.action == Action.LEFT_CLICK_BLOCK && Items.hasName(item, "复制工具") && Items.hasLore(item, "Coolect")) {
@@ -69,42 +71,7 @@ class Listener : Listener, Helper {
             collectDataTools.drops = collectDataBlock.drops
             collectDataTools.conditions = collectDataBlock.conditions
             collectDataTools.init()
-        }
-    }
-
-    @EventHandler
-    fun onEditBook(event:PlayerEditBookEvent){
-        if (!event.player.isOp) {
-            return
-        }
-        val book = event.previousBookMeta
-        val player = event.player
-        if (book.displayName.contains("编辑掉落") && book.lore!![0].unColored() == "Coolect"){
-            val collectData = Collect.getCollect(Util.toLocation(book.lore!![1].unColored()).block)
-            if (collectData == null) {
-                player.error("该方案已失效.")
-                return
-            }
-            collectData.drops.clear()
-            if (book.pages[0].unColored() != "clear"){
-                collectData.drops.addAll(book.pages.flatMap { it.replace("§0","").split("\n") })
-            }
-            collectData.init()
-            event.isSigning = false
-            return
-        }
-        if (book.displayName.contains("编辑采集条件") && book.lore!![0].unColored() == "Coolect"){
-            val collectData = Collect.getCollect(Util.toLocation(book.lore!![1].unColored()).block)
-            if (collectData == null) {
-                player.error("该方案已失效.")
-                return
-            }
-            collectData.conditions.clear()
-            if (book.pages[0].unColored() != "clear"){
-                collectData.conditions.addAll(book.pages.flatMap { it.replace("§0","").split("\n") })
-            }
-            collectData.init()
-            event.isSigning = false
+            player.info("粘贴完成.")
         }
     }
 

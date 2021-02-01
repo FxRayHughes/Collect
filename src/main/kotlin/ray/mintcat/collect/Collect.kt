@@ -4,9 +4,10 @@ import io.izzel.taboolib.loader.Plugin
 import io.izzel.taboolib.module.db.local.LocalFile
 import io.izzel.taboolib.module.inject.TFunction
 import io.izzel.taboolib.module.inject.TSchedule
-import org.bukkit.Location
 import org.bukkit.block.Block
 import org.bukkit.configuration.file.FileConfiguration
+import ray.mintcat.collect.data.CollectData
+import ray.mintcat.collect.util.Util
 
 object Collect : Plugin() {
 
@@ -24,7 +25,7 @@ object Collect : Plugin() {
                 CollectData(
                     data.getString("${it}.type", "AIR") ?: "AIR",
                     data.getString("${it}.data") ?: "",
-                    data.getString("${it}.location") ?: "World#0.0#0.0#0.0",
+                    Util.toLocation(it.replace("__", ".")),
                     data.getStringList("${it}.drops"),
                     data.getStringList("${it}.conditions")
                 )
@@ -36,10 +37,10 @@ object Collect : Plugin() {
     fun export() {
         data.getKeys(false).forEach { data.set(it, null) }
         collects.forEach { collectData ->
-            val location = collectData.location
+            val location = Util.fromLocation(collectData.location).replace(".", "__")
             data.set("${location}.type", collectData.location)
             data.set("${location}.data", collectData.data)
-            data.set("${location}.location", collectData.location)
+            data.set("${location}.location", location)
             data.set("${location}.drops", collectData.drops)
             data.set("${location}.conditions", collectData.conditions)
         }

@@ -3,12 +3,14 @@ package ray.mintcat.collect
 import io.izzel.taboolib.cronus.CronusUtils
 import io.izzel.taboolib.module.command.base.*
 import io.izzel.taboolib.util.item.ItemBuilder
-import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import ray.mintcat.collect.Util.formatsOne
+import ray.mintcat.collect.data.CollectData
+import ray.mintcat.collect.util.Util.formatsOne
+import ray.mintcat.collect.util.Helper
+import ray.mintcat.collect.util.Util
 import java.io.File
 
 @BaseCommand(name = "collect", permission = "*")
@@ -34,7 +36,7 @@ class Command : BaseMainCommand(), Helper {
                 CollectData(
                     block.type.name,
                     block.blockData.asString,
-                    Util.fromLocation(block.location)
+                    block.location
                 ).run {
                     this.openEdit(sender)
                     this
@@ -60,7 +62,7 @@ class Command : BaseMainCommand(), Helper {
             block.display()
             sender.info("方案已移除.")
             Collect.collects.remove(collectData)
-            Collect.delete(collectData.location)
+            Collect.delete(Util.fromLocation(collectData.location))
             Collect.export()
         }
     }

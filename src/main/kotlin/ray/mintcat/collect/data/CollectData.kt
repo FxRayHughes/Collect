@@ -1,29 +1,29 @@
-package ray.mintcat.collect
+package ray.mintcat.collect.data
 
-import github.saukiya.sxattribute.SXAttribute
-import ink.ptms.zaphkiel.ZaphkielAPI
 import io.izzel.taboolib.TabooLibAPI
 import io.izzel.taboolib.cronus.CronusUtils
-import io.izzel.taboolib.internal.xseries.XMaterial
+import io.izzel.taboolib.kotlin.ketherx.KetherFunction
 import io.izzel.taboolib.util.Features
-import io.izzel.taboolib.util.book.builder.BookBuilder
 import io.izzel.taboolib.util.item.ItemBuilder
-import io.izzel.taboolib.util.item.Items
 import io.izzel.taboolib.util.item.inventory.MenuBuilder
-import io.izzel.taboolib.util.lite.Materials
-import io.lumine.xikage.mythicmobs.MythicMobs
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.block.data.BlockData
 import org.bukkit.entity.Player
-import org.bukkit.inventory.ItemStack
+import ray.mintcat.collect.Collect
+import ray.mintcat.collect.drop.Drop
+import ray.mintcat.collect.drop.DropData
+import ray.mintcat.collect.util.Helper
+import ray.mintcat.collect.util.Util
+import ray.mintcat.collect.util.WeightCategory
+import ray.mintcat.collect.util.WeightUtil
 
 class CollectData(
     var type: String,
     var data: String,
-    var location: String,
+    var location: Location,
     var drops: MutableList<String> = ArrayList(),
     var conditions: MutableList<String> = ArrayList()
 ) : Helper {
@@ -31,6 +31,7 @@ class CollectData(
     lateinit var material: Material
     lateinit var blockData: BlockData
     lateinit var locationData: Location
+    lateinit var dropData: List<DropData>
 
     init {
         init()
@@ -43,7 +44,7 @@ class CollectData(
             Material.valueOf(type)
         }
         blockData = Bukkit.createBlockData(data)
-        locationData = Util.toLocation(location.replace("__", "."))
+        dropData = getDropList()
     }
 
 
@@ -57,16 +58,10 @@ class CollectData(
 
     fun check(player: Player): Boolean {
         val info = conditions.papi(player) ?: return true
+        val a = !info.map { KetherFunction.parse(it, cacheFunction = false, cacheScript = true) }.contains("false")
         return !info.map { Features.compileScript(it)?.eval().toString().toBoolean() }.contains(false)
     }
 
-    fun drop(player: Player) {
-        val data = getdrop()
-        val info = data?.action?.papi(player)?.split(": ") ?: return
-        (0..data.amount).forEach { _ ->
-            CronusUtils.addItem(player, getDrops(player, info[0], info[1]))
-        }
-    }
 
     fun getdrop(): DropData? {
         //开始权重运算 想起了战士教我的写法
@@ -80,8 +75,10 @@ class CollectData(
     fun getDropList(): List<DropData> {
         val dropList = mutableListOf<DropData>()
         drops.forEach {
-            val info = it.split(" | ")
-            dropList.add(DropData(info[0].toInt(), info[1], info[2].toInt()))
+            val drop = Drop.getDrop(it)
+            if (drop != null){
+                dropList.add(drop)
+            }
         }
         return dropList
     }
@@ -90,36 +87,10 @@ class CollectData(
         return this.locationData == block.location
     }
 
-    //这个写法超级阴间 因为引入了地府API！
-    fun getDrops(player: Player, key: String, value: String): ItemStack {
-        return when (key) {
-            "mm", "MM" -> MythicMobs.inst().itemManager.getItemStack(value) ?: ItemStack(Material.AIR)
-            "mc", "MC" -> ItemBuilder(Material.valueOf(value)).build()
-            "ij", "IJ" -> Items.fromJson(value) ?: ItemStack(Material.AIR)
-            "sx", "SX" -> SXAttribute.getApi().getItem(value, player)
-            // cmd: op->
-            "cmd", "Command" -> run {
-                val cmd = value.split("->")
-                when (cmd[0]) {
-                    "player" -> Features.dispatchCommand(player, cmd[1])
-                    "op" -> Features.dispatchCommand(player, cmd[1], true)
-                    "server" -> Features.dispatchCommand(Bukkit.getConsoleSender(), cmd[1])
-                }
-                ItemStack(Material.AIR)
-            }
-            "msg", "message" -> run {
-                player.sendMessage(value)
-                ItemStack(Material.AIR)
-            }
-            "zap", "ZAP" -> ZaphkielAPI.getItem(value)?.rebuild(player) ?: ItemStack(Material.AIR)
-            else -> ItemStack(Material.AIR)
-        }
-    }
-
 
     fun openEdit(player: Player) {
         val menu = MenuBuilder.builder()
-        menu.title("编辑脚本 ${Util.fromLocation(locationData)}")
+        menu.title("编辑方案 $location")
         menu.rows(3)
         menu.build { inv ->
             inv.setItem(
@@ -150,28 +121,17 @@ class CollectData(
                     )
                 }
                 13 -> {
-                    player.closeInventory()
-                    CronusUtils.addItem(
-                        player,
-                        ItemBuilder(
-                            BookBuilder(Materials.WRITABLE_BOOK.parseItem()).pagesRaw(
-                                drops.joinToString("\n")
-                            ).build()
-                        ).name("§f§f§f编辑掉落")
-                            .lore("§7Coolect", "§7$location").build()
-                    )
+
                 }
                 15 -> {
                     player.closeInventory()
-                    CronusUtils.addItem(
-                        player,
-                        ItemBuilder(
-                            BookBuilder(Materials.WRITABLE_BOOK.parseItem()).pagesRaw(
-                                conditions.joinToString("\n")
-                            ).build()
-                        ).name("§f§f§f编辑采集条件")
-                            .lore("§7Coolect", "§7$location").build()
-                    )
+                    player.info("请编辑内容，编辑后会自动保存. 语法:§f JavaScript")
+                    Features.inputBook(player,"§f§f§f编辑条件",false,drops) { list->
+                        conditions.clear()
+                        conditions.addAll(list)
+                        player.info("编辑完成.")
+                        init()
+                    }
                 }
             }
         }
@@ -181,4 +141,18 @@ class CollectData(
         menu.open(player)
     }
 
+    fun openDrops(player: Player){
+        val menu = MenuBuilder.builder()
+        menu.rows(3)
+        menu.title("正在编辑方案 $location")
+        menu.build{ inv->
+        }
+        menu.event {
+
+        }
+        menu.close {
+            openEdit(player)
+        }
+        menu.open(player)
+    }
 }

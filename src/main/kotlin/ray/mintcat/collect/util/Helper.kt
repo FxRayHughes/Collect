@@ -1,4 +1,4 @@
-package ray.mintcat.collect
+package ray.mintcat.collect.util
 
 import io.izzel.taboolib.Version
 import io.izzel.taboolib.module.inject.TInject

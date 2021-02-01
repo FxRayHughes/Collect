@@ -1,4 +1,4 @@
-package ray.mintcat.collect
+package ray.mintcat.collect.util
 
 //战士教我的权重模块
 class WeightCategory<T>(
